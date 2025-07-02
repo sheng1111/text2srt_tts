@@ -12,6 +12,7 @@ def config():
     config["AZURE_REGION"] = ""
     return config
 
+@pytest.mark.skip(reason="Requires network access for edge_tts")
 def test_synthesize_with_edge_tts(config, tmp_path):
     """Tests if the service correctly uses Edge TTS when Azure keys are missing."""
     service = VoiceService(config)
