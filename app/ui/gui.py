@@ -35,6 +35,18 @@ if 'lang' not in st.session_state:
 
 lang_data = load_translation(st.session_state.lang)
 
+# Initialize session state for generated outputs
+if "generated" not in st.session_state:
+    st.session_state.generated = False
+if "audio_file_path" not in st.session_state:
+    st.session_state.audio_file_path = ""
+if "srt_file_path" not in st.session_state:
+    st.session_state.srt_file_path = ""
+if "srt_content" not in st.session_state:
+    st.session_state.srt_content = ""
+if "output_dir" not in st.session_state:
+    st.session_state.output_dir = ""
+
 # Create a row for title and language selection
 title_col, lang_col = st.columns([0.8, 0.2])
 
@@ -102,43 +114,53 @@ if st.button(lang_data["app"]["generate_button_label"], key="generate_button_mai
                     f.write(srt_content)
 
                 end_time = time.time()
-                st.success(f"{lang_data['app']['generation_success']}{end_time - start_time:.2f} {lang_data['app']['seconds']}")
 
-                st.header(lang_data["app"]["output_section_header"])
-
-                st.subheader(lang_data["app"]["audio_output_subheader"])
-                st.audio(audio_file_path)
-
-                st.subheader(lang_data["app"]["srt_output_subheader"])
-                st.text_area(lang_data["app"]["srt_content_preview"], srt_content, height=200, key="srt_output_main")
-
-                st.subheader(lang_data["app"]["download_files_subheader"])
-                col_dl_audio, col_dl_srt = st.columns(2)
-                with col_dl_audio:
-                    with open(audio_file_path, "rb") as f:
-                        st.download_button(
-                            lang_data["app"]["download_audio_button"],
-                            f,
-                            file_name=os.path.basename(audio_file_path),
-                            key="download_audio_main",
-                            use_container_width=True
-                        )
-                with col_dl_srt:
-                    with open(srt_file_path, "r", encoding="utf-8") as f:
-                        st.download_button(
-                            lang_data["app"]["download_srt_button"],
-                            f,
-                            file_name=os.path.basename(srt_file_path),
-                            key="download_srt_main",
-                            use_container_width=True
-                        )
-
-                st.info(f"{lang_data['app']['files_saved_info']}`{output_dir}`")
+                # Store results in session state for persistence across reruns
+                st.session_state.generated = True
+                st.session_state.audio_file_path = audio_file_path
+                st.session_state.srt_file_path = srt_file_path
+                st.session_state.srt_content = srt_content
+                st.session_state.output_dir = output_dir
+                st.session_state.gen_time = f"{end_time - start_time:.2f}"
 
             except Exception as e:
                 st.error(f"{lang_data['app']['error_message']} {e}")
     else:
         st.warning(lang_data["app"]["warning_no_text"])
 
+if st.session_state.generated:
+    st.success(f"{lang_data['app']['generation_success']}{st.session_state.gen_time} {lang_data['app']['seconds']}")
+
+    st.header(lang_data["app"]["output_section_header"])
+
+    st.subheader(lang_data["app"]["audio_output_subheader"])
+    st.audio(st.session_state.audio_file_path)
+
+    st.subheader(lang_data["app"]["srt_output_subheader"])
+    st.text_area(lang_data["app"]["srt_content_preview"], st.session_state.srt_content, height=200, key="srt_output_main")
+
+    st.subheader(lang_data["app"]["download_files_subheader"])
+    col_dl_audio, col_dl_srt = st.columns(2)
+    with col_dl_audio:
+        with open(st.session_state.audio_file_path, "rb") as f:
+            st.download_button(
+                lang_data["app"]["download_audio_button"],
+                f,
+                file_name=os.path.basename(st.session_state.audio_file_path),
+                key="download_audio_main",
+                use_container_width=True
+            )
+    with col_dl_srt:
+        with open(st.session_state.srt_file_path, "r", encoding="utf-8") as f:
+            st.download_button(
+                lang_data["app"]["download_srt_button"],
+                f,
+                file_name=os.path.basename(st.session_state.srt_file_path),
+                key="download_srt_main",
+                use_container_width=True
+            )
+
+    st.info(f"{lang_data['app']['files_saved_info']}`{st.session_state.output_dir}`")
+
 st.markdown("---")
-st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.0</p>", unsafe_allow_html=True)
+st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.1</p>", unsafe_allow_html=True)
