@@ -3,7 +3,7 @@ import streamlit as st
 import toml
 import os
 import uuid
-import time # For measuring generation time
+import time  # For measuring generation time
 from app.services.voice import VoiceService
 from app.services.subtitle import SubtitleService
 
@@ -31,7 +31,11 @@ def set_language():
 
 # Language selection
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'zh_TW' # Default language
+    st.session_state.lang = 'zh_TW'  # Default language
+
+# Initialize storage for generated task results
+if 'task' not in st.session_state:
+    st.session_state['task'] = None
 
 lang_data = load_translation(st.session_state.lang)
 
@@ -84,7 +88,13 @@ with col_settings:
 
 st.markdown("--- ")
 
-if st.button(lang_data["app"]["generate_button_label"], key="generate_button_main", use_container_width=True):
+generate_clicked = st.button(
+    lang_data["app"]["generate_button_label"],
+    key="generate_button_main",
+    use_container_width=True,
+)
+
+if generate_clicked:
     if text_input:
         start_time = time.time()
 
@@ -94,7 +104,9 @@ if st.button(lang_data["app"]["generate_button_label"], key="generate_button_mai
 
         with st.spinner(lang_data["app"]["generating_spinner"]):
             try:
-                audio_file_path, word_boundaries = voice_service.synthesize(text_input, voice_name, rate, pitch, volume, output_dir)
+                audio_file_path, word_boundaries = voice_service.synthesize(
+                    text_input, voice_name, rate, pitch, volume, output_dir
+                )
 
                 srt_content = subtitle_service.generate_srt(word_boundaries, max_line_length)
                 srt_file_path = os.path.join(output_dir, "output.srt")
@@ -102,43 +114,63 @@ if st.button(lang_data["app"]["generate_button_label"], key="generate_button_mai
                     f.write(srt_content)
 
                 end_time = time.time()
-                st.success(f"{lang_data['app']['generation_success']}{end_time - start_time:.2f} {lang_data['app']['seconds']}")
 
-                st.header(lang_data["app"]["output_section_header"])
-
-                st.subheader(lang_data["app"]["audio_output_subheader"])
-                st.audio(audio_file_path)
-
-                st.subheader(lang_data["app"]["srt_output_subheader"])
-                st.text_area(lang_data["app"]["srt_content_preview"], srt_content, height=200, key="srt_output_main")
-
-                st.subheader(lang_data["app"]["download_files_subheader"])
-                col_dl_audio, col_dl_srt = st.columns(2)
-                with col_dl_audio:
-                    with open(audio_file_path, "rb") as f:
-                        st.download_button(
-                            lang_data["app"]["download_audio_button"],
-                            f,
-                            file_name=os.path.basename(audio_file_path),
-                            key="download_audio_main",
-                            use_container_width=True
-                        )
-                with col_dl_srt:
-                    with open(srt_file_path, "r", encoding="utf-8") as f:
-                        st.download_button(
-                            lang_data["app"]["download_srt_button"],
-                            f,
-                            file_name=os.path.basename(srt_file_path),
-                            key="download_srt_main",
-                            use_container_width=True
-                        )
-
-                st.info(f"{lang_data['app']['files_saved_info']}`{output_dir}`")
+                st.session_state["task"] = {
+                    "output_dir": output_dir,
+                    "audio_file_path": audio_file_path,
+                    "srt_file_path": srt_file_path,
+                    "srt_content": srt_content,
+                    "gen_time": end_time - start_time,
+                }
 
             except Exception as e:
                 st.error(f"{lang_data['app']['error_message']} {e}")
+                st.session_state["task"] = None
     else:
         st.warning(lang_data["app"]["warning_no_text"])
+        st.session_state["task"] = None
+
+task = st.session_state.get("task")
+if task:
+    st.success(
+        f"{lang_data['app']['generation_success']}{task['gen_time']:.2f} {lang_data['app']['seconds']}"
+    )
+
+    st.header(lang_data["app"]["output_section_header"])
+
+    st.subheader(lang_data["app"]["audio_output_subheader"])
+    st.audio(task["audio_file_path"])
+
+    st.subheader(lang_data["app"]["srt_output_subheader"])
+    st.text_area(
+        lang_data["app"]["srt_content_preview"],
+        task["srt_content"],
+        height=200,
+        key="srt_output_main",
+    )
+
+    st.subheader(lang_data["app"]["download_files_subheader"])
+    col_dl_audio, col_dl_srt = st.columns(2)
+    with col_dl_audio:
+        with open(task["audio_file_path"], "rb") as f:
+            st.download_button(
+                lang_data["app"]["download_audio_button"],
+                f,
+                file_name=os.path.basename(task["audio_file_path"]),
+                key="download_audio_main",
+                use_container_width=True,
+            )
+    with col_dl_srt:
+        with open(task["srt_file_path"], "r", encoding="utf-8") as f:
+            st.download_button(
+                lang_data["app"]["download_srt_button"],
+                f,
+                file_name=os.path.basename(task["srt_file_path"]),
+                key="download_srt_main",
+                use_container_width=True,
+            )
+
+    st.info(f"{lang_data['app']['files_saved_info']}`{task['output_dir']}`")
 
 st.markdown("---")
-st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.0</p>", unsafe_allow_html=True)
+st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.1</p>", unsafe_allow_html=True)
