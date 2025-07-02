@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+.venv/
+virtualenv/
+env/
+
+# IDEs
+.idea/
+.vscode/
+
+# Streamlit
+.streamlit/
+
+# Generated files
+output.wav
+output.mp3
+output.srt
+
+# Task output directory
+task/
+
+# Test files
+.pytest_cache/
+cli_output/
+config.toml
+.ipynb_checkpoints/

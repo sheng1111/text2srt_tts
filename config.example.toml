@@ -1,0 +1,40 @@
+# (Optional) Azure Speech Service Credentials
+# If you want to use the higher quality Azure TTS, fill in your key and region.
+# If you leave these blank, the application will use the free Edge TTS.
+AZURE_KEY = ""
+AZURE_REGION = ""
+
+# (Optional) Path to the ffmpeg executable
+# If ffmpeg is in your system's PATH, you can leave this empty.
+# Example for Windows: "C:/ffmpeg/bin/ffmpeg.exe"
+# Example for Linux/macOS: "/usr/local/bin/ffmpeg"
+ffmpeg_path = ""
+
+# Voice configuration
+# Add or modify voice names here.
+# See the full list of supported voices: https://aka.ms/speech/voices/neural
+[voices]
+  [voices.zh-CN-XiaoxiaoNeural]
+    name = "zh-CN-XiaoxiaoNeural"
+  [voices.zh-CN-XiaoyiNeural]
+    name = "zh-CN-XiaoyiNeural"
+  [voices.zh-CN-YunjianNeural]
+    name = "zh-CN-YunjianNeural"
+  [voices.zh-CN-YunxiNeural]
+    name = "zh-CN-YunxiNeural"
+  [voices.zh-CN-YunxiaNeural]
+    name = "zh-CN-YunxiaNeural"
+  [voices.zh-CN-YunyangNeural]
+    name = "zh-CN-YunyangNeural"
+  [voices.zh-CN-liaoning-XiaobeiNeural]
+    name = "zh-CN-liaoning-XiaobeiNeural"
+  [voices.zh-CN-shaanxi-XiaoniNeural]
+    name = "zh-CN-shaanxi-XiaoniNeural"
+  [voices.zh-TW-HsiaoChenNeural]
+    name = "zh-TW-HsiaoChenNeural"
+  [voices.zh-TW-HsiaoYuNeural]
+    name = "zh-TW-HsiaoYuNeural"
+  [voices.zh-TW-YunJheNeural]
+    name = "zh-TW-YunJheNeural"
+  [voices.en-US]
+    name = "en-US-JennyNeural"

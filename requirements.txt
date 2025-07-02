@@ -1,0 +1,6 @@
+streamlit
+azure-cognitiveservices-speech
+edge-tts
+pydub
+tqdm
+pytest
