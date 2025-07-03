@@ -6,6 +6,7 @@ import uuid
 import time  # For measuring generation time
 from app.services.voice import VoiceService
 from app.services.subtitle import SubtitleService
+from app.utils.validation import sanitize_text, MAX_TEXT_LENGTH
 
 # Function to load translations
 def load_translation(lang):
@@ -65,6 +66,10 @@ col_input, col_settings = st.columns(2)
 with col_input:
     st.header(lang_data["app"]["input_section_header"])
     text_input = st.text_area(lang_data["app"]["input_text_area_label"], height=350, key="text_input_main")
+    sanitized_text = sanitize_text(text_input)
+    if sanitized_text != text_input:
+        st.warning(lang_data["app"].get("warning_invalid_chars", ""))
+        text_input = sanitized_text
 
 with col_settings:
     st.header(lang_data["app"]["settings_section_header"])
@@ -95,7 +100,13 @@ generate_clicked = st.button(
 )
 
 if generate_clicked:
-    if text_input:
+    if not text_input:
+        st.warning(lang_data["app"]["warning_no_text"])
+        st.session_state["task"] = None
+    elif len(text_input) > MAX_TEXT_LENGTH:
+        st.error(lang_data["app"].get("warning_text_too_long", "").format(max=MAX_TEXT_LENGTH))
+        st.session_state["task"] = None
+    else:
         start_time = time.time()
 
         task_id = str(uuid.uuid4())
@@ -126,9 +137,6 @@ if generate_clicked:
             except Exception as e:
                 st.error(f"{lang_data['app']['error_message']} {e}")
                 st.session_state["task"] = None
-    else:
-        st.warning(lang_data["app"]["warning_no_text"])
-        st.session_state["task"] = None
 
 task = st.session_state.get("task")
 if task:
@@ -173,4 +181,4 @@ if task:
     st.info(f"{lang_data['app']['files_saved_info']}`{task['output_dir']}`")
 
 st.markdown("---")
-st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.1</p>", unsafe_allow_html=True)
+st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.2</p>", unsafe_allow_html=True)

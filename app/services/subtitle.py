@@ -6,7 +6,7 @@ class SubtitleService:
         self.config = config
 
     def generate_srt(self, word_boundaries, max_line_length=10):
-        srt_content = ""
+        srt_parts = []
         subtitle_id = 1
         current_line = ""
         line_start_time = 0
@@ -20,7 +20,7 @@ class SubtitleService:
                 line_start_time = start_time
 
             if len(current_line) + len(word) + 1 > max_line_length and current_line:
-                srt_content += text_to_srt(subtitle_id, current_line, line_start_time, last_end_time)
+                srt_parts.append(text_to_srt(subtitle_id, current_line, line_start_time, last_end_time))
                 subtitle_id += 1
                 current_line = word
                 line_start_time = start_time
@@ -33,6 +33,6 @@ class SubtitleService:
 
             # Add the last line if it's the end of the boundaries
             if i == len(word_boundaries) - 1 and current_line:
-                srt_content += text_to_srt(subtitle_id, current_line, line_start_time, end_time)
+                srt_parts.append(text_to_srt(subtitle_id, current_line, line_start_time, end_time))
 
-        return srt_content
+        return "".join(srt_parts)
