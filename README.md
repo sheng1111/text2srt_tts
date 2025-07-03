@@ -1,6 +1,6 @@
 # text2srt_tts
 
-[![Version](https://img.shields.io/badge/Version-v1.0.1-blue.svg)](https://github.com/sheng1111/text2srt_tts)
+[![Version](https://img.shields.io/badge/Version-v1.0.2-blue.svg)](https://github.com/sheng1111/text2srt_tts)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
@@ -20,9 +20,11 @@ One-click conversion of text to high-quality speech (WAV & MP3) and accurate sub
 -   **SRT Subtitle Generation**:
     -   Automatically splits text into lines based on word boundaries.
     -   Adjustable maximum characters per line.
+    -   Optimized for better performance when processing long text.
 -   **Streamlit User Interface**:
     -   Intuitive web interface supporting text input, voice selection, and parameter adjustments.
     -   Real-time preview of audio and subtitles.
+    -   Basic validation of input text to remove invalid characters and limit length.
     -   Provides download links for WAV/MP3 audio files and SRT subtitle files.
     -   Each generation creates a separate `task_id` subfolder under the `task/` directory to store results.
 -   **Docker Support**:
@@ -152,6 +154,7 @@ To run the unit tests, execute the following command within your virtual environ
 source .venv/bin/activate # Ensure virtual environment is activated
 pytest
 ```
+All tests are located in the `tests/` directory.
 
 ## 🤝 Contributing
 

@@ -1,6 +1,6 @@
 # text2srt_tts
 
-[![Version](https://img.shields.io/badge/Version-v1.0.1-blue.svg)](https://github.com/sheng1111/text2srt_tts)
+[![Version](https://img.shields.io/badge/Version-v1.0.2-blue.svg)](https://github.com/sheng1111/text2srt_tts)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
@@ -20,9 +20,11 @@
 -   **SRT 字幕生成**：
     -   根據單詞邊界自動將文字分割成行。
     -   可調整每行最大字數。
+    -   優化長篇文字處理效能。
 -   **Streamlit 使用者介面**：
     -   直觀的網頁介面，支援文字輸入、語音選擇、參數調整。
     -   即時預覽語音和字幕。
+    -   基本驗證輸入文字，移除非法字元並限制長度。
     -   提供 WAV/MP3 語音檔和 SRT 字幕檔的下載連結。
     -   每次生成都會在 `task/` 資料夾下建立獨立的 `task_id` 子資料夾來儲存結果。
 -   **Docker 支援**：
@@ -152,6 +154,7 @@ python -m app.cli --text input.txt --lang zh-CN-XiaoxiaoNeural --out output_fold
 source .venv/bin/activate # 確保虛擬環境已啟動
 pytest
 ```
+所有測試案例位於 `tests/` 目錄下。
 
 ## 🤝 貢獻
 
