@@ -1,14 +1,25 @@
-
 import streamlit as st
 import toml
 import os
 import uuid
-import time  # For measuring generation time
+import time
+from pathlib import Path
 from app.services.voice import VoiceService
 from app.services.subtitle import SubtitleService
 
+# Configure page settings
+st.set_page_config(
+    page_title="Text to Speech & Subtitle Generator",
+    page_icon="🎤",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Function to load translations
+
+
 def load_translation(lang):
+    """Load translation file for the specified language."""
     try:
         with open(f"locales/{lang}.toml", "r", encoding="utf-8") as f:
             return toml.load(f)
@@ -16,161 +27,335 @@ def load_translation(lang):
         st.error(f"Translation file for {lang} not found.")
         return {}
 
+# Language management
+
+
+def set_language():
+    """Set the language from the selector."""
+    st.session_state.lang = st.session_state.lang_selector
+
+
+def get_language_display_name(lang_code):
+    """Get display name for language code."""
+    language_names = {
+        'zh_TW': '繁體中文',
+        'en': 'English'
+    }
+    return language_names.get(lang_code, lang_code)
+
+
+# Initialize session state
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'zh_TW'  # Default language
+
+if 'task' not in st.session_state:
+    st.session_state['task'] = None
+
+if 'generation_in_progress' not in st.session_state:
+    st.session_state['generation_in_progress'] = False
+
 # Load configuration
-if os.path.exists("config.toml"):
-    config = toml.load("config.toml")
-else:
-    config = toml.load("config.example.toml")
+config_path = "config.toml" if os.path.exists(
+    "config.toml") else "config.example.toml"
+config = toml.load(config_path)
 
 # Initialize services
 voice_service = VoiceService(config)
 subtitle_service = SubtitleService(config)
 
-def set_language():
-    st.session_state.lang = st.session_state.lang_selector
-
-# Language selection
-if 'lang' not in st.session_state:
-    st.session_state.lang = 'zh_TW'  # Default language
-
-# Initialize storage for generated task results
-if 'task' not in st.session_state:
-    st.session_state['task'] = None
-
+# Load translations
 lang_data = load_translation(st.session_state.lang)
 
-# Create a row for title and language selection
-title_col, lang_col = st.columns([0.8, 0.2])
-
-with lang_col:
-    selected_lang = st.selectbox(
-        lang_data["app"]["language_select_label"],
-        options=['zh_TW', 'en'],
-        format_func=lambda x: '繁體中文' if x == 'zh_TW' else 'English',
-        key='lang_selector',
-        label_visibility="collapsed",
-        on_change=set_language,
-        index=0 if st.session_state.lang == 'zh_TW' else 1 # Set initial index based on current language
-    )
-
-st.set_page_config(layout="wide", page_title=lang_data["app"]["page_title"], page_icon="🎤")
-
-with title_col:
-    st.title(lang_data["app"]["title"])
-st.write(lang_data["app"]["description"])
-st.markdown("--- ")
-
-col_input, col_settings = st.columns(2)
-
-with col_input:
-    st.header(lang_data["app"]["input_section_header"])
-    text_input = st.text_area(lang_data["app"]["input_text_area_label"], height=350, key="text_input_main")
-
-with col_settings:
-    st.header(lang_data["app"]["settings_section_header"])
-
-    st.subheader(lang_data["app"]["voice_selection_subheader"])
-    voice_options = list(config["voices"].keys())
-    selected_voice_name = st.selectbox(lang_data["app"]["voice_select_label"], voice_options, key="voice_select_main")
-    voice_name = config["voices"][selected_voice_name]["name"]
-
-    st.subheader(lang_data["app"]["voice_params_subheader"])
-    col_rate, col_pitch, col_volume = st.columns(3)
-    with col_rate:
-        rate = st.slider(lang_data["app"]["rate_slider_label"], -100, 100, 0, key="rate_slider_main")
-    with col_pitch:
-        pitch = st.slider(lang_data["app"]["pitch_slider_label"], -100, 100, 0, key="pitch_slider_main")
-    with col_volume:
-        volume = st.slider(lang_data["app"]["volume_slider_label"], -100, 100, 0, key="volume_slider_main")
-
-    st.subheader(lang_data["app"]["subtitle_settings_subheader"])
-    max_line_length = st.slider(lang_data["app"]["max_line_length_slider_label"], 5, 20, 10, key="line_length_slider_main")
-
-st.markdown("--- ")
-
-generate_clicked = st.button(
-    lang_data["app"]["generate_button_label"],
-    key="generate_button_main",
-    use_container_width=True,
+# SIDEBAR SETTINGS
+st.sidebar.header("🌐 " + lang_data["app"]["language_select_label"])
+selected_lang = st.sidebar.selectbox(
+    label="Language",
+    options=['zh_TW', 'en'],
+    format_func=get_language_display_name,
+    key='lang_selector',
+    on_change=set_language,
+    index=0 if st.session_state.lang == 'zh_TW' else 1,
+    label_visibility="collapsed"
 )
 
+st.sidebar.markdown("---")
+
+# Voice Settings in Sidebar
+st.sidebar.header("🎙️ " + lang_data["app"]["voice_selection_subheader"])
+voice_options = list(config["voices"].keys())
+selected_voice_name = st.sidebar.selectbox(
+    lang_data["app"]["voice_select_label"],
+    voice_options,
+    key="voice_select_main",
+    help="Choose the voice that best fits your content"
+)
+
+# Display voice info
+if selected_voice_name in config["voices"]:
+    voice_info = config["voices"][selected_voice_name]
+    st.sidebar.info(f"🎙️ Voice: {voice_info['name']}")
+
+st.sidebar.markdown("---")
+
+# Voice Parameters in Sidebar
+st.sidebar.header("🎛️ " + lang_data["app"]["voice_params_subheader"])
+
+rate = st.sidebar.slider(
+    lang_data["app"]["rate_slider_label"],
+    min_value=-50,
+    max_value=50,
+    value=0,
+    step=5,
+    key="rate_slider_main",
+    help="Adjust speech speed: negative values slow down, positive values speed up"
+)
+
+pitch = st.sidebar.slider(
+    lang_data["app"]["pitch_slider_label"],
+    min_value=-50,
+    max_value=50,
+    value=0,
+    step=5,
+    key="pitch_slider_main",
+    help="Adjust pitch: negative values lower pitch, positive values raise pitch"
+)
+
+volume = st.sidebar.slider(
+    lang_data["app"]["volume_slider_label"],
+    min_value=-50,
+    max_value=50,
+    value=0,
+    step=5,
+    key="volume_slider_main",
+    help="Adjust volume: negative values decrease volume, positive values increase volume"
+)
+
+st.sidebar.markdown("---")
+
+# Subtitle Settings in Sidebar
+st.sidebar.header("📜 " + lang_data["app"]["subtitle_settings_subheader"])
+
+max_line_length = st.sidebar.slider(
+    lang_data["app"]["max_line_length_slider_label"],
+    min_value=20,
+    max_value=80,
+    value=40,
+    step=5,
+    key="line_length_slider_main",
+    help="Maximum characters per subtitle line for better readability"
+)
+
+preserve_punctuation = st.sidebar.checkbox(
+    "Preserve punctuation in subtitles",
+    value=True,
+    key="preserve_punctuation",
+    help="Keep punctuation marks in subtitle text"
+)
+
+st.sidebar.markdown("---")
+
+# Version info in sidebar
+st.sidebar.markdown("**🔧 Version:** v1.1.0")
+st.sidebar.markdown(
+    "**📚 [Documentation](https://github.com/sheng1111/text2srt_tts)**")
+
+# MAIN CONTENT AREA
+st.title("🎤 " + lang_data["app"]["title"])
+st.markdown(lang_data["app"]["description"])
+
+# Input Section
+st.header("📝 " + lang_data["app"]["input_section_header"])
+
+text_input = st.text_area(
+    label=lang_data["app"]["input_text_area_label"],
+    height=300,
+    key="text_input_main",
+    placeholder=lang_data["app"]["input_text_area_label"]
+)
+
+# Character count and status
+col1, col2 = st.columns([3, 1])
+with col1:
+    char_count = len(text_input) if text_input else 0
+    st.caption(f"📊 {char_count} characters")
+
+with col2:
+    if st.session_state.generation_in_progress:
+        st.info("⏳ Processing...")
+    elif text_input:
+        st.success("✅ Ready")
+    else:
+        st.warning("⚠️ Enter text")
+
+# Quick tips expander
+with st.expander("💡 Tips for Better Results"):
+    st.markdown("""
+    - Use proper punctuation for natural speech pauses
+    - Keep sentences clear and concise
+    - Avoid excessive special characters
+    - Test with shorter texts first for optimal results
+    """)
+
+# Generation Button
+st.markdown("---")
+generate_clicked = st.button(
+    f"🎯 {lang_data['app']['generate_button_label']}",
+    key="generate_button_main",
+    use_container_width=True,
+    type="primary",
+    disabled=st.session_state.generation_in_progress
+)
+
+# Generation Logic
 if generate_clicked:
     if text_input:
+        st.session_state.generation_in_progress = True
         start_time = time.time()
+
+        # Progress indicators
+        progress_bar = st.progress(0)
+        status_text = st.empty()
 
         task_id = str(uuid.uuid4())
         output_dir = os.path.join("task", task_id)
         os.makedirs(output_dir, exist_ok=True)
 
-        with st.spinner(lang_data["app"]["generating_spinner"]):
-            try:
-                audio_file_path, word_boundaries = voice_service.synthesize(
-                    text_input, voice_name, rate, pitch, volume, output_dir
-                )
+        try:
+            # Step 1: Voice synthesis
+            status_text.text(lang_data["app"]["generating_spinner"])
+            progress_bar.progress(25)
 
-                srt_content = subtitle_service.generate_srt(word_boundaries, max_line_length)
-                srt_file_path = os.path.join(output_dir, "output.srt")
-                with open(srt_file_path, "w", encoding="utf-8") as f:
-                    f.write(srt_content)
+            voice_name = config["voices"][selected_voice_name]["name"]
+            audio_file_path, word_boundaries = voice_service.synthesize(
+                text_input, voice_name, rate, pitch, volume, output_dir
+            )
 
-                end_time = time.time()
+            # Step 2: Subtitle generation
+            status_text.text("🔄 Generating subtitles...")
+            progress_bar.progress(75)
 
-                st.session_state["task"] = {
-                    "output_dir": output_dir,
-                    "audio_file_path": audio_file_path,
-                    "srt_file_path": srt_file_path,
-                    "srt_content": srt_content,
-                    "gen_time": end_time - start_time,
+            srt_content = subtitle_service.generate_srt(
+                word_boundaries,
+                max_line_length,
+                preserve_punctuation
+            )
+            srt_file_path = os.path.join(output_dir, "output.srt")
+            with open(srt_file_path, "w", encoding="utf-8") as f:
+                f.write(srt_content)
+
+            # Step 3: Complete
+            progress_bar.progress(100)
+            status_text.text("✅ Generation complete!")
+
+            end_time = time.time()
+
+            st.session_state["task"] = {
+                "output_dir": output_dir,
+                "audio_file_path": audio_file_path,
+                "srt_file_path": srt_file_path,
+                "srt_content": srt_content,
+                "gen_time": end_time - start_time,
+                "voice_name": selected_voice_name,
+                "settings": {
+                    "rate": rate,
+                    "pitch": pitch,
+                    "volume": volume,
+                    "max_line_length": max_line_length,
+                    "preserve_punctuation": preserve_punctuation
                 }
+            }
 
-            except Exception as e:
-                st.error(f"{lang_data['app']['error_message']} {e}")
-                st.session_state["task"] = None
+            st.session_state.generation_in_progress = False
+            st.rerun()
+
+        except Exception as e:
+            st.session_state.generation_in_progress = False
+            st.error(f"❌ {lang_data['app']['error_message']} {e}")
+            st.session_state["task"] = None
+
     else:
-        st.warning(lang_data["app"]["warning_no_text"])
-        st.session_state["task"] = None
+        st.warning(f"⚠️ {lang_data['app']['warning_no_text']}")
 
+# Display Results
 task = st.session_state.get("task")
-if task:
-    st.success(
-        f"{lang_data['app']['generation_success']}{task['gen_time']:.2f} {lang_data['app']['seconds']}"
-    )
+if task and not st.session_state.generation_in_progress:
+    st.markdown("---")
+    st.header("🎉 " + lang_data["app"]["output_section_header"])
 
-    st.header(lang_data["app"]["output_section_header"])
+    # Success message
+    st.success(f"""
+    🎉 {lang_data['app']['generation_success']}
+    **⏱️ Time:** {task['gen_time']:.2f} {lang_data['app']['seconds']}
+    **🎙️ Voice:** {task['voice_name']}
+    **📁 Location:** `{task['output_dir']}`
+    """)
 
-    st.subheader(lang_data["app"]["audio_output_subheader"])
-    st.audio(task["audio_file_path"])
+    # Results display
+    col_audio, col_subtitle = st.columns([1, 1])
 
-    st.subheader(lang_data["app"]["srt_output_subheader"])
-    st.text_area(
-        lang_data["app"]["srt_content_preview"],
-        task["srt_content"],
-        height=200,
-        key="srt_output_main",
-    )
+    with col_audio:
+        st.subheader("🔊 " + lang_data["app"]["audio_output_subheader"])
 
-    st.subheader(lang_data["app"]["download_files_subheader"])
-    col_dl_audio, col_dl_srt = st.columns(2)
-    with col_dl_audio:
+        # Audio player
+        st.audio(task["audio_file_path"])
+
+        # Audio file info
+        audio_path = Path(task["audio_file_path"])
+        audio_size = audio_path.stat().st_size / 1024  # Size in KB
+        st.caption(f"📊 File: {audio_path.name} ({audio_size:.1f} KB)")
+
+    with col_subtitle:
+        st.subheader("📜 " + lang_data["app"]["srt_output_subheader"])
+
+        # SRT preview
+        st.text_area(
+            label="SRT Preview",
+            value=task["srt_content"],
+            height=200,
+            key="srt_output_main",
+            label_visibility="collapsed"
+        )
+
+        # SRT info
+        srt_lines = len(
+            [line for line in task["srt_content"].split('\n') if line.strip()])
+        st.caption(f"📊 Total lines: {srt_lines}")
+
+    # Download section
+    st.subheader("⬇️ " + lang_data["app"]["download_files_subheader"])
+
+    col_dl1, col_dl2, col_dl3 = st.columns([1, 1, 1])
+
+    with col_dl1:
         with open(task["audio_file_path"], "rb") as f:
             st.download_button(
-                lang_data["app"]["download_audio_button"],
-                f,
+                label=f"📥 {lang_data['app']['download_audio_button']}",
+                data=f,
                 file_name=os.path.basename(task["audio_file_path"]),
+                mime="audio/wav" if task["audio_file_path"].endswith(
+                    '.wav') else "audio/mp3",
                 key="download_audio_main",
-                use_container_width=True,
-            )
-    with col_dl_srt:
-        with open(task["srt_file_path"], "r", encoding="utf-8") as f:
-            st.download_button(
-                lang_data["app"]["download_srt_button"],
-                f,
-                file_name=os.path.basename(task["srt_file_path"]),
-                key="download_srt_main",
-                use_container_width=True,
+                use_container_width=True
             )
 
-    st.info(f"{lang_data['app']['files_saved_info']}`{task['output_dir']}`")
+    with col_dl2:
+        st.download_button(
+            label=f"📝 {lang_data['app']['download_srt_button']}",
+            data=task["srt_content"],
+            file_name=os.path.basename(task["srt_file_path"]),
+            mime="text/plain",
+            key="download_srt_main",
+            use_container_width=True
+        )
 
-st.markdown("---")
-st.markdown("<p style=\"text-align: center; color: grey;\">v1.0.1</p>", unsafe_allow_html=True)
+    with col_dl3:
+        if st.button("🗑️ Clear Results", key="clear_results", use_container_width=True):
+            st.session_state["task"] = None
+            st.rerun()
+
+    # Settings info
+    st.info(f"""
+    **🎛️ Settings Used:**
+    Rate: {task['settings']['rate']}%, Pitch: {task['settings']['pitch']}%, Volume: {task['settings']['volume']}%
+    Max Line Length: {task['settings']['max_line_length']} chars, Preserve Punctuation: {task['settings']['preserve_punctuation']}
+    """)
