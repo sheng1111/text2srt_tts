@@ -101,20 +101,26 @@ text2srt_tts/
 
 ### 1. Local Installation
 
-```bash
+    ```bash
+
 # Clone the repository
-git clone https://github.com/sheng1111/text2srt_tts.git
-cd text2srt_tts
+
+    git clone https://github.com/sheng1111/text2srt_tts.git
+    cd text2srt_tts
 
 # Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+
+    python3 -m venv .venv
+    source .venv/bin/activate  # Linux/macOS
+
+# .venv\Scripts\activate # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+
+    pip install -r requirements.txt
 
 # Launch the application
+
 streamlit run app/ui/gui.py
 ```
 
@@ -122,16 +128,20 @@ streamlit run app/ui/gui.py
 
 #### Quick Setup with Docker Compose
 
-```bash
+    ```bash
+
 # Clone and navigate to project
+
 git clone https://github.com/sheng1111/text2srt_tts.git
 cd text2srt_tts
 
 # Start with Docker Compose
+
 docker-compose up --build
 
 # Access application at http://localhost:8501
-```
+
+````
 
 #### Manual Docker Build
 
@@ -148,7 +158,7 @@ docker run -p 8501:8501 \
   -e AZURE_REGION="your-region" \
   -v ./task:/app/task \
   text2srt_tts
-```
+````
 
 ### 3. Configuration (Optional)
 

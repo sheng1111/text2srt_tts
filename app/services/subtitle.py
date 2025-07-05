@@ -1,6 +1,13 @@
+from app.utils.text_to_srt import text_to_srt
 import re
 import string
-from app.utils.text_to_srt import text_to_srt
+import os
+import sys
+
+# Add utils directory to path
+utils_path = os.path.join(os.path.dirname(__file__), '..', 'utils')
+if utils_path not in sys.path:
+    sys.path.insert(0, utils_path)
 
 
 class SubtitleService:
@@ -18,7 +25,7 @@ class SubtitleService:
         """
         self.config = config
 
-    def generate_srt(self, word_boundaries, max_line_length=40, preserve_punctuation=True):
+    def generate_srt(self, word_boundaries, max_line_length=40, preserve_punctuation=True, original_text=None):
         """
         Generate SRT content from word boundaries with improved text processing.
 
@@ -26,6 +33,7 @@ class SubtitleService:
             word_boundaries: List of word boundary info from TTS service
             max_line_length: Maximum characters per subtitle line
             preserve_punctuation: Whether to preserve punctuation marks
+            original_text: Original input text to preserve punctuation from
 
         Returns:
             str: Complete SRT content
@@ -39,6 +47,11 @@ class SubtitleService:
 
         if not cleaned_boundaries:
             return ""
+
+        # If we have original text and want to preserve punctuation, use it as reference
+        if original_text and preserve_punctuation:
+            cleaned_boundaries = self._align_with_original_text(
+                cleaned_boundaries, original_text)
 
         srt_content = ""
         subtitle_id = 1
@@ -66,6 +79,63 @@ class SubtitleService:
                 subtitle_id += 1
 
         return srt_content
+
+    def _align_with_original_text(self, word_boundaries, original_text):
+        """
+        Align word boundaries with original text to preserve punctuation.
+
+        Args:
+            word_boundaries: List of word boundaries from TTS
+            original_text: Original input text with punctuation
+
+        Returns:
+            List of word boundaries with restored punctuation
+        """
+        if not word_boundaries or not original_text:
+            return word_boundaries
+
+        # Extract words from word boundaries (without punctuation)
+        tts_words = [wb["text"].strip()
+                     for wb in word_boundaries if wb["text"].strip()]
+
+        # Split original text into words while preserving punctuation
+        import re
+        # This regex splits on whitespace but keeps punctuation attached to words
+        original_words = re.findall(r'\S+', original_text)
+
+        # Align TTS words with original words
+        aligned_boundaries = []
+        tts_index = 0
+
+        for original_word in original_words:
+            if tts_index >= len(word_boundaries):
+                break
+
+            # Remove punctuation from original word for comparison
+            clean_original = re.sub(r'[^\w\s]', '', original_word).strip()
+
+            # Find matching TTS word
+            if tts_index < len(tts_words):
+                clean_tts = re.sub(
+                    r'[^\w\s]', '', tts_words[tts_index]).strip()
+
+                # If words match (ignoring punctuation), use original word with punctuation
+                if clean_original.lower() == clean_tts.lower():
+                    aligned_word = word_boundaries[tts_index].copy()
+                    aligned_word["text"] = original_word
+                    aligned_boundaries.append(aligned_word)
+                    tts_index += 1
+                else:
+                    # If no match, use TTS word as is
+                    aligned_boundaries.append(word_boundaries[tts_index])
+                    tts_index += 1
+
+        # Add any remaining TTS words
+        while tts_index < len(word_boundaries):
+            aligned_boundaries.append(word_boundaries[tts_index])
+            tts_index += 1
+
+        return aligned_boundaries
 
     def _clean_word_boundaries(self, word_boundaries, preserve_punctuation):
         """

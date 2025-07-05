@@ -1,11 +1,31 @@
 import streamlit as st
 import toml
 import os
+import sys
 import uuid
 import time
 from pathlib import Path
-from app.services.voice import VoiceService
-from app.services.subtitle import SubtitleService
+
+# Add current directory and parent directory to Python path for compatibility
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# Add services directory to Python path
+services_path = os.path.join(os.path.dirname(__file__), '..', 'services')
+if services_path not in sys.path:
+    sys.path.insert(0, services_path)
+
+# Import services
+try:
+    from voice import VoiceService
+    from subtitle import SubtitleService
+except ImportError as e:
+    st.error(f"Failed to import required modules: {e}")
+    st.stop()
 
 # Configure page settings
 st.set_page_config(
@@ -20,12 +40,23 @@ st.set_page_config(
 
 def load_translation(lang):
     """Load translation file for the specified language."""
-    try:
-        with open(f"locales/{lang}.toml", "r", encoding="utf-8") as f:
-            return toml.load(f)
-    except FileNotFoundError:
-        st.error(f"Translation file for {lang} not found.")
-        return {}
+    # Try different paths for locales directory
+    possible_paths = [
+        f"locales/{lang}.toml",
+        f"../../locales/{lang}.toml",
+        f"{project_root}/locales/{lang}.toml"
+    ]
+
+    for path in possible_paths:
+        try:
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    return toml.load(f)
+        except Exception:
+            continue
+
+    st.error(f"Translation file for {lang} not found.")
+    return {}
 
 # Language management
 
@@ -54,20 +85,51 @@ if 'task' not in st.session_state:
 if 'generation_in_progress' not in st.session_state:
     st.session_state['generation_in_progress'] = False
 
-# Load configuration
-config_path = "config.toml" if os.path.exists(
-    "config.toml") else "config.example.toml"
-config = toml.load(config_path)
+# Load configuration with multiple path attempts
+
+
+def load_config():
+    """Load configuration file from multiple possible locations."""
+    possible_config_paths = [
+        "config.toml",
+        "config.example.toml",
+        "../../config.toml",
+        "../../config.example.toml",
+        f"{project_root}/config.toml",
+        f"{project_root}/config.example.toml"
+    ]
+
+    for path in possible_config_paths:
+        if os.path.exists(path):
+            return toml.load(path)
+
+    # Fallback default configuration
+    return {
+        "voices": {
+            "Chinese Female": {"name": "zh-CN-XiaoxiaoNeural"},
+            "Chinese Male": {"name": "zh-CN-YunxiNeural"},
+            "English Female": {"name": "en-US-AriaNeural"},
+            "English Male": {"name": "en-US-GuyNeural"}
+        }
+    }
+
+
+config = load_config()
 
 # Initialize services
-voice_service = VoiceService(config)
-subtitle_service = SubtitleService(config)
+try:
+    voice_service = VoiceService(config)
+    subtitle_service = SubtitleService(config)
+except Exception as e:
+    st.error(f"Failed to initialize services: {e}")
+    st.stop()
 
 # Load translations
 lang_data = load_translation(st.session_state.lang)
 
 # SIDEBAR SETTINGS
-st.sidebar.header("🌐 " + lang_data["app"]["language_select_label"])
+st.sidebar.header("🌐 " + lang_data.get("app", {}
+                                       ).get("language_select_label", "Language"))
 selected_lang = st.sidebar.selectbox(
     label="Language",
     options=['zh_TW', 'en'],
@@ -81,27 +143,33 @@ selected_lang = st.sidebar.selectbox(
 st.sidebar.markdown("---")
 
 # Voice Settings in Sidebar
-st.sidebar.header("🎙️ " + lang_data["app"]["voice_selection_subheader"])
-voice_options = list(config["voices"].keys())
+st.sidebar.header("🎙️ " + lang_data.get("app", {}
+                                        ).get("voice_selection_subheader", "Voice Selection"))
+voice_options = list(config.get("voices", {}).keys())
+if not voice_options:
+    st.error("No voices configured in config file.")
+    st.stop()
+
 selected_voice_name = st.sidebar.selectbox(
-    lang_data["app"]["voice_select_label"],
+    lang_data.get("app", {}).get("voice_select_label", "Select Voice:"),
     voice_options,
     key="voice_select_main",
     help="Choose the voice that best fits your content"
 )
 
 # Display voice info
-if selected_voice_name in config["voices"]:
+if selected_voice_name in config.get("voices", {}):
     voice_info = config["voices"][selected_voice_name]
     st.sidebar.info(f"🎙️ Voice: {voice_info['name']}")
 
 st.sidebar.markdown("---")
 
 # Voice Parameters in Sidebar
-st.sidebar.header("🎛️ " + lang_data["app"]["voice_params_subheader"])
+st.sidebar.header("🎛️ " + lang_data.get("app", {}
+                                        ).get("voice_params_subheader", "Voice Parameters"))
 
 rate = st.sidebar.slider(
-    lang_data["app"]["rate_slider_label"],
+    lang_data.get("app", {}).get("rate_slider_label", "Speech Rate (%)"),
     min_value=-50,
     max_value=50,
     value=0,
@@ -111,7 +179,7 @@ rate = st.sidebar.slider(
 )
 
 pitch = st.sidebar.slider(
-    lang_data["app"]["pitch_slider_label"],
+    lang_data.get("app", {}).get("pitch_slider_label", "Pitch (%)"),
     min_value=-50,
     max_value=50,
     value=0,
@@ -121,7 +189,7 @@ pitch = st.sidebar.slider(
 )
 
 volume = st.sidebar.slider(
-    lang_data["app"]["volume_slider_label"],
+    lang_data.get("app", {}).get("volume_slider_label", "Volume (%)"),
     min_value=-50,
     max_value=50,
     value=0,
@@ -133,10 +201,12 @@ volume = st.sidebar.slider(
 st.sidebar.markdown("---")
 
 # Subtitle Settings in Sidebar
-st.sidebar.header("📜 " + lang_data["app"]["subtitle_settings_subheader"])
+st.sidebar.header("📜 " + lang_data.get("app", {}
+                                       ).get("subtitle_settings_subheader", "Subtitle Settings"))
 
 max_line_length = st.sidebar.slider(
-    lang_data["app"]["max_line_length_slider_label"],
+    lang_data.get("app", {}).get("max_line_length_slider_label",
+                                 "Max characters per subtitle line"),
     min_value=20,
     max_value=80,
     value=40,
@@ -146,10 +216,10 @@ max_line_length = st.sidebar.slider(
 )
 
 preserve_punctuation = st.sidebar.checkbox(
-    "Preserve punctuation in subtitles",
+    "保留原始文本標點符號",
     value=True,
     key="preserve_punctuation",
-    help="Keep punctuation marks in subtitle text"
+    help="保留用戶輸入文本中的標點符號，確保字幕與原文一致"
 )
 
 st.sidebar.markdown("---")
@@ -160,17 +230,22 @@ st.sidebar.markdown(
     "**📚 [Documentation](https://github.com/sheng1111/text2srt_tts)**")
 
 # MAIN CONTENT AREA
-st.title("🎤 " + lang_data["app"]["title"])
-st.markdown(lang_data["app"]["description"])
+st.title("🎤 " + lang_data.get("app", {}).get("title",
+         "Text to Speech & Subtitle Generator"))
+st.markdown(lang_data.get("app", {}).get("description",
+            "Convert text to high-quality speech and accurate subtitles."))
 
 # Input Section
-st.header("📝 " + lang_data["app"]["input_section_header"])
+st.header("📝 " + lang_data.get("app", {}
+                               ).get("input_section_header", "Enter Text"))
 
 text_input = st.text_area(
-    label=lang_data["app"]["input_text_area_label"],
+    label=lang_data.get("app", {}).get(
+        "input_text_area_label", "Please enter the text you want to convert here"),
     height=300,
     key="text_input_main",
-    placeholder=lang_data["app"]["input_text_area_label"]
+    placeholder=lang_data.get("app", {}).get(
+        "input_text_area_label", "Please enter the text you want to convert here")
 )
 
 # Character count and status
@@ -199,7 +274,7 @@ with st.expander("💡 Tips for Better Results"):
 # Generation Button
 st.markdown("---")
 generate_clicked = st.button(
-    f"🎯 {lang_data['app']['generate_button_label']}",
+    f"🎯 {lang_data.get('app', {}).get('generate_button_label', 'Generate Speech & Subtitles')}",
     key="generate_button_main",
     use_container_width=True,
     type="primary",
@@ -222,7 +297,8 @@ if generate_clicked:
 
         try:
             # Step 1: Voice synthesis
-            status_text.text(lang_data["app"]["generating_spinner"])
+            status_text.text(lang_data.get("app", {}).get(
+                "generating_spinner", "Generating speech and subtitles..."))
             progress_bar.progress(25)
 
             voice_name = config["voices"][selected_voice_name]["name"]
@@ -237,7 +313,8 @@ if generate_clicked:
             srt_content = subtitle_service.generate_srt(
                 word_boundaries,
                 max_line_length,
-                preserve_punctuation
+                preserve_punctuation,
+                text_input
             )
             srt_file_path = os.path.join(output_dir, "output.srt")
             with open(srt_file_path, "w", encoding="utf-8") as f:
@@ -270,22 +347,25 @@ if generate_clicked:
 
         except Exception as e:
             st.session_state.generation_in_progress = False
-            st.error(f"❌ {lang_data['app']['error_message']} {e}")
+            st.error(
+                f"❌ {lang_data.get('app', {}).get('error_message', 'An error occurred:')} {e}")
             st.session_state["task"] = None
 
     else:
-        st.warning(f"⚠️ {lang_data['app']['warning_no_text']}")
+        st.warning(
+            f"⚠️ {lang_data.get('app', {}).get('warning_no_text', 'Please enter some text to start generation.')}")
 
 # Display Results
 task = st.session_state.get("task")
 if task and not st.session_state.generation_in_progress:
     st.markdown("---")
-    st.header("🎉 " + lang_data["app"]["output_section_header"])
+    st.header("🎉 " + lang_data.get("app", {}
+                                   ).get("output_section_header", "Generation Results"))
 
     # Success message
     st.success(f"""
-    🎉 {lang_data['app']['generation_success']}
-    **⏱️ Time:** {task['gen_time']:.2f} {lang_data['app']['seconds']}
+    🎉 {lang_data.get('app', {}).get('generation_success', 'Generation complete!')}
+    **⏱️ Time:** {task['gen_time']:.2f} {lang_data.get('app', {}).get('seconds', 'seconds')}
     **🎙️ Voice:** {task['voice_name']}
     **📁 Location:** `{task['output_dir']}`
     """)
@@ -294,7 +374,8 @@ if task and not st.session_state.generation_in_progress:
     col_audio, col_subtitle = st.columns([1, 1])
 
     with col_audio:
-        st.subheader("🔊 " + lang_data["app"]["audio_output_subheader"])
+        st.subheader("🔊 " + lang_data.get("app", {}
+                                          ).get("audio_output_subheader", "Audio Output"))
 
         # Audio player
         st.audio(task["audio_file_path"])
@@ -305,7 +386,8 @@ if task and not st.session_state.generation_in_progress:
         st.caption(f"📊 File: {audio_path.name} ({audio_size:.1f} KB)")
 
     with col_subtitle:
-        st.subheader("📜 " + lang_data["app"]["srt_output_subheader"])
+        st.subheader("📜 " + lang_data.get("app", {}
+                                          ).get("srt_output_subheader", "SRT Subtitle"))
 
         # SRT preview
         st.text_area(
@@ -322,14 +404,15 @@ if task and not st.session_state.generation_in_progress:
         st.caption(f"📊 Total lines: {srt_lines}")
 
     # Download section
-    st.subheader("⬇️ " + lang_data["app"]["download_files_subheader"])
+    st.subheader("⬇️ " + lang_data.get("app", {}
+                                       ).get("download_files_subheader", "Download Files"))
 
     col_dl1, col_dl2, col_dl3 = st.columns([1, 1, 1])
 
     with col_dl1:
         with open(task["audio_file_path"], "rb") as f:
             st.download_button(
-                label=f"📥 {lang_data['app']['download_audio_button']}",
+                label=f"📥 {lang_data.get('app', {}).get('download_audio_button', 'Download Audio')}",
                 data=f,
                 file_name=os.path.basename(task["audio_file_path"]),
                 mime="audio/wav" if task["audio_file_path"].endswith(
@@ -340,7 +423,7 @@ if task and not st.session_state.generation_in_progress:
 
     with col_dl2:
         st.download_button(
-            label=f"📝 {lang_data['app']['download_srt_button']}",
+            label=f"📝 {lang_data.get('app', {}).get('download_srt_button', 'Download Subtitle')}",
             data=task["srt_content"],
             file_name=os.path.basename(task["srt_file_path"]),
             mime="text/plain",
