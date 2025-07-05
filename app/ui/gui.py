@@ -216,16 +216,18 @@ max_line_length = st.sidebar.slider(
 )
 
 preserve_punctuation = st.sidebar.checkbox(
-    "保留原始文本標點符號",
+    lang_data.get("app", {}).get(
+        "preserve_punctuation_checkbox_label", "Preserve Punctuation"),
     value=True,
     key="preserve_punctuation",
-    help="保留用戶輸入文本中的標點符號，確保字幕與原文一致"
+    help=lang_data.get("app", {}).get(
+        "preserve_punctuation_checkbox_help", "Preserve punctuation in the original text")
 )
 
 st.sidebar.markdown("---")
 
 # Version info in sidebar
-st.sidebar.markdown("**🔧 Version:** v1.1.0")
+st.sidebar.markdown("**🔧 Version:** v1.1.1")
 st.sidebar.markdown(
     "**📚 [Documentation](https://github.com/sheng1111/text2srt_tts)**")
 

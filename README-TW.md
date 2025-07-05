@@ -1,8 +1,8 @@
 # text2srt_tts
 
-[![Version](https://img.shields.io/badge/Version-v1.1.0-blue.svg)](https://github.com/sheng1111/text2srt_tts)
+[![Version](https://img.shields.io/badge/Version-v1.1.1-blue.svg)](https://github.com/sheng1111/text2srt_tts)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)](https://streamlit.io/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)](https://text2tts.streamlit.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sheng1111/text2srt_tts)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue?style=flat-square&logo=docker)](https://docker.com/)
