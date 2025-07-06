@@ -1,6 +1,6 @@
 # text2srt_tts
 
-[![Version](https://img.shields.io/badge/Version-v1.1.2-blue.svg)](https://github.com/sheng1111/text2srt_tts)
+[![Version](https://img.shields.io/badge/Version-v1.1.3-blue.svg)](https://github.com/sheng1111/text2srt_tts)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)](https://text2tts.streamlit.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
@@ -10,7 +10,7 @@
 
 一鍵將文字轉換為高品質語音（WAV & MP3）與精準字幕（SRT），並在現代化單頁式 Streamlit UI 中提供即時預覽和下載功能。具備智能文字分割、雙語言支援和側邊欄控制的增強使用者體驗。
 
-## 🆕 v1.1.0 新功能
+## 🆕 v1.1.3 新功能
 
 - **🎨 單頁式介面**：現代化側邊欄佈局，自動適應深色/淺色主題
 - **🧠 增強字幕生成**：先進的標點符號處理和智能文字分割
@@ -174,6 +174,8 @@ cp config.example.toml config.toml
 "中文男聲" = { name = "zh-CN-YunxiNeural" }
 "英文女聲" = { name = "en-US-AriaNeural" }
 "英文男聲" = { name = "en-US-GuyNeural" }
+"日文女聲" = { name = "ja-JP-NanamiNeural" }
+"日文男聲" = { name = "ja-JP-KeitaNeural" }
 ```
 
 ### Azure TTS 設定（選用）
@@ -320,7 +322,7 @@ docker run -p 8501:8501 text2srt_tts:dev
 
 ## 📝 更新日誌
 
-### v1.1.0（目前版本）
+### v1.1.3（目前版本）
 
 - 具有側邊欄控制的單頁式介面
 - 增強的 SRT 生成與標點符號處理

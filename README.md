@@ -1,6 +1,6 @@
 # text2srt_tts
 
-[![Version](https://img.shields.io/badge/Version-v1.1.2-blue.svg)](https://github.com/sheng1111/text2srt_tts)
+[![Version](https://img.shields.io/badge/Version-v1.1.3-blue.svg)](https://github.com/sheng1111/text2srt_tts)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)](https://text2tts.streamlit.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
@@ -10,7 +10,7 @@
 
 One-click conversion of text to high-quality speech (WAV & MP3) and accurate subtitles (SRT), with real-time preview and download functionality in a modern single-page Streamlit UI. Features intelligent text segmentation, bilingual support, and enhanced user experience with sidebar controls.
 
-## 🆕 What's New in v1.1.0
+## 🆕 What's New in v1.1.3
 
 - **🎨 Single-Page Interface**: Modern sidebar-based layout that adapts to dark/light themes
 - **🧠 Enhanced SRT Generation**: Advanced punctuation handling and intelligent text segmentation
@@ -123,7 +123,7 @@ text2srt_tts/
 
 streamlit run app/ui/gui.py
 
-````
+```
 
 ### 2. Docker Deployment (Recommended)
 
@@ -142,7 +142,7 @@ docker-compose up --build
 
 # Access application at http://localhost:8501
 
-````
+```
 
 #### Manual Docker Build
 
@@ -185,6 +185,8 @@ Configure available voices in `config.toml`:
 "Chinese Male" = { name = "zh-CN-YunxiNeural" }
 "English Female" = { name = "en-US-AriaNeural" }
 "English Male" = { name = "en-US-GuyNeural" }
+"Japanese Female" = { name = "ja-JP-NanamiNeural" }
+"Japanese Male" = { name = "ja-JP-KeitaNeural" }
 ```
 
 ### Azure TTS Setup (Optional)
@@ -331,7 +333,7 @@ docker run -p 8501:8501 text2srt_tts:dev
 
 ## 📝 Changelog
 
-### v1.1.0 (Current)
+### v1.1.3 (Current)
 
 - Single-page interface with sidebar controls
 - Enhanced SRT generation with punctuation handling

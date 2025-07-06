@@ -38,3 +38,9 @@ ffmpeg_path = ""
     name = "zh-TW-YunJheNeural"
   [voices.en-US]
     name = "en-US-JennyNeural"
+  [voices.en-US-GuyNeural]
+    name = "en-US-GuyNeural"
+  [voices.ja-JP-NanamiNeural]
+    name = "ja-JP-NanamiNeural"
+  [voices.ja-JP-KeitaNeural]
+    name = "ja-JP-KeitaNeural"
