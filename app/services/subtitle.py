@@ -94,46 +94,34 @@ class SubtitleService:
         if not word_boundaries or not original_text:
             return word_boundaries
 
-        # Extract words from word boundaries (without punctuation)
-        tts_words = [wb["text"].strip()
-                     for wb in word_boundaries if wb["text"].strip()]
-
-        # Split original text into words while preserving punctuation
         import re
-        # This regex splits on whitespace but keeps punctuation attached to words
-        original_words = re.findall(r'\S+', original_text)
 
-        # Align TTS words with original words
+        tokens = re.findall(r'\w+|[^\w\s]', original_text, re.UNICODE)
+        if not tokens:
+            return word_boundaries
+
         aligned_boundaries = []
-        tts_index = 0
+        token_index = 0
 
-        for original_word in original_words:
-            if tts_index >= len(word_boundaries):
-                break
+        for wb in word_boundaries:
+            if token_index >= len(tokens):
+                aligned_boundaries.append(wb)
+                continue
 
-            # Remove punctuation from original word for comparison
-            clean_original = re.sub(r'[^\w\s]', '', original_word).strip()
+            pieces = []
+            while token_index < len(tokens):
+                token = tokens[token_index]
+                pieces.append(token)
+                token_index += 1
+                if re.match(r'\w', token, re.UNICODE):
+                    while token_index < len(tokens) and not re.match(r'\w', tokens[token_index], re.UNICODE):
+                        pieces.append(tokens[token_index])
+                        token_index += 1
+                    break
 
-            # Find matching TTS word
-            if tts_index < len(tts_words):
-                clean_tts = re.sub(
-                    r'[^\w\s]', '', tts_words[tts_index]).strip()
-
-                # If words match (ignoring punctuation), use original word with punctuation
-                if clean_original.lower() == clean_tts.lower():
-                    aligned_word = word_boundaries[tts_index].copy()
-                    aligned_word["text"] = original_word
-                    aligned_boundaries.append(aligned_word)
-                    tts_index += 1
-                else:
-                    # If no match, use TTS word as is
-                    aligned_boundaries.append(word_boundaries[tts_index])
-                    tts_index += 1
-
-        # Add any remaining TTS words
-        while tts_index < len(word_boundaries):
-            aligned_boundaries.append(word_boundaries[tts_index])
-            tts_index += 1
+            aligned_word = wb.copy()
+            aligned_word["text"] = ''.join(pieces)
+            aligned_boundaries.append(aligned_word)
 
         return aligned_boundaries
 

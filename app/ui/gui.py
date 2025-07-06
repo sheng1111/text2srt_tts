@@ -127,9 +127,13 @@ except Exception as e:
 # Load translations
 lang_data = load_translation(st.session_state.lang)
 
+# Helper function for translations
+def t(key: str, default: str = "") -> str:
+    """Retrieve translated string from language data."""
+    return lang_data.get("app", {}).get(key, default)
+
 # SIDEBAR SETTINGS
-st.sidebar.header("🌐 " + lang_data.get("app", {}
-                                       ).get("language_select_label", "Language"))
+st.sidebar.header("🌐 " + t("language_select_label", "Language"))
 selected_lang = st.sidebar.selectbox(
     label="Language",
     options=['zh_TW', 'en'],
@@ -143,15 +147,14 @@ selected_lang = st.sidebar.selectbox(
 st.sidebar.markdown("---")
 
 # Voice Settings in Sidebar
-st.sidebar.header("🎙️ " + lang_data.get("app", {}
-                                        ).get("voice_selection_subheader", "Voice Selection"))
+st.sidebar.header("🎙️ " + t("voice_selection_subheader", "Voice Selection"))
 voice_options = list(config.get("voices", {}).keys())
 if not voice_options:
     st.error("No voices configured in config file.")
     st.stop()
 
 selected_voice_name = st.sidebar.selectbox(
-    lang_data.get("app", {}).get("voice_select_label", "Select Voice:"),
+    t("voice_select_label", "Select Voice:"),
     voice_options,
     key="voice_select_main",
     help="Choose the voice that best fits your content"
@@ -165,11 +168,10 @@ if selected_voice_name in config.get("voices", {}):
 st.sidebar.markdown("---")
 
 # Voice Parameters in Sidebar
-st.sidebar.header("🎛️ " + lang_data.get("app", {}
-                                        ).get("voice_params_subheader", "Voice Parameters"))
+st.sidebar.header("🎛️ " + t("voice_params_subheader", "Voice Parameters"))
 
 rate = st.sidebar.slider(
-    lang_data.get("app", {}).get("rate_slider_label", "Speech Rate (%)"),
+    t("rate_slider_label", "Speech Rate (%)"),
     min_value=-50,
     max_value=50,
     value=0,
@@ -179,7 +181,7 @@ rate = st.sidebar.slider(
 )
 
 pitch = st.sidebar.slider(
-    lang_data.get("app", {}).get("pitch_slider_label", "Pitch (%)"),
+    t("pitch_slider_label", "Pitch (%)"),
     min_value=-50,
     max_value=50,
     value=0,
@@ -189,7 +191,7 @@ pitch = st.sidebar.slider(
 )
 
 volume = st.sidebar.slider(
-    lang_data.get("app", {}).get("volume_slider_label", "Volume (%)"),
+    t("volume_slider_label", "Volume (%)"),
     min_value=-50,
     max_value=50,
     value=0,
@@ -201,12 +203,10 @@ volume = st.sidebar.slider(
 st.sidebar.markdown("---")
 
 # Subtitle Settings in Sidebar
-st.sidebar.header("📜 " + lang_data.get("app", {}
-                                       ).get("subtitle_settings_subheader", "Subtitle Settings"))
+st.sidebar.header("📜 " + t("subtitle_settings_subheader", "Subtitle Settings"))
 
 max_line_length = st.sidebar.slider(
-    lang_data.get("app", {}).get("max_line_length_slider_label",
-                                 "Max characters per subtitle line"),
+    t("max_line_length_slider_label", "Max characters per subtitle line"),
     min_value=20,
     max_value=80,
     value=40,
@@ -216,38 +216,34 @@ max_line_length = st.sidebar.slider(
 )
 
 preserve_punctuation = st.sidebar.checkbox(
-    lang_data.get("app", {}).get(
-        "preserve_punctuation_checkbox_label", "Preserve Punctuation"),
+    t("preserve_punctuation_checkbox_label", "Preserve Punctuation"),
     value=True,
     key="preserve_punctuation",
-    help=lang_data.get("app", {}).get(
-        "preserve_punctuation_checkbox_help", "Preserve punctuation in the original text")
+    help=t(
+        "preserve_punctuation_checkbox_help",
+        "Preserve punctuation in the original text"
+    )
 )
 
 st.sidebar.markdown("---")
 
 # Version info in sidebar
-st.sidebar.markdown("**🔧 Version:** v1.1.1")
+st.sidebar.markdown("**🔧 Version:** v1.1.2")
 st.sidebar.markdown(
     "**📚 [Documentation](https://github.com/sheng1111/text2srt_tts)**")
 
 # MAIN CONTENT AREA
-st.title("🎤 " + lang_data.get("app", {}).get("title",
-         "Text to Speech & Subtitle Generator"))
-st.markdown(lang_data.get("app", {}).get("description",
-            "Convert text to high-quality speech and accurate subtitles."))
+st.title("🎤 " + t("title", "Text to Speech & Subtitle Generator"))
+st.markdown(t("description", "Convert text to high-quality speech and accurate subtitles."))
 
 # Input Section
-st.header("📝 " + lang_data.get("app", {}
-                               ).get("input_section_header", "Enter Text"))
+st.header("📝 " + t("input_section_header", "Enter Text"))
 
 text_input = st.text_area(
-    label=lang_data.get("app", {}).get(
-        "input_text_area_label", "Please enter the text you want to convert here"),
+    label=t("input_text_area_label", "Please enter the text you want to convert here"),
     height=300,
     key="text_input_main",
-    placeholder=lang_data.get("app", {}).get(
-        "input_text_area_label", "Please enter the text you want to convert here")
+    placeholder=t("input_text_area_label", "Please enter the text you want to convert here")
 )
 
 # Character count and status
@@ -276,7 +272,7 @@ with st.expander("💡 Tips for Better Results"):
 # Generation Button
 st.markdown("---")
 generate_clicked = st.button(
-    f"🎯 {lang_data.get('app', {}).get('generate_button_label', 'Generate Speech & Subtitles')}",
+    f"🎯 {t('generate_button_label', 'Generate Speech & Subtitles')}",
     key="generate_button_main",
     use_container_width=True,
     type="primary",
@@ -299,8 +295,9 @@ if generate_clicked:
 
         try:
             # Step 1: Voice synthesis
-            status_text.text(lang_data.get("app", {}).get(
-                "generating_spinner", "Generating speech and subtitles..."))
+            status_text.text(
+                t("generating_spinner", "Generating speech and subtitles...")
+            )
             progress_bar.progress(25)
 
             voice_name = config["voices"][selected_voice_name]["name"]
@@ -350,24 +347,25 @@ if generate_clicked:
         except Exception as e:
             st.session_state.generation_in_progress = False
             st.error(
-                f"❌ {lang_data.get('app', {}).get('error_message', 'An error occurred:')} {e}")
+                f"❌ {t('error_message', 'An error occurred:')} {e}"
+            )
             st.session_state["task"] = None
 
     else:
         st.warning(
-            f"⚠️ {lang_data.get('app', {}).get('warning_no_text', 'Please enter some text to start generation.')}")
+            f"⚠️ {t('warning_no_text', 'Please enter some text to start generation.')}"
+        )
 
 # Display Results
 task = st.session_state.get("task")
 if task and not st.session_state.generation_in_progress:
     st.markdown("---")
-    st.header("🎉 " + lang_data.get("app", {}
-                                   ).get("output_section_header", "Generation Results"))
+    st.header("🎉 " + t("output_section_header", "Generation Results"))
 
     # Success message
     st.success(f"""
-    🎉 {lang_data.get('app', {}).get('generation_success', 'Generation complete!')}
-    **⏱️ Time:** {task['gen_time']:.2f} {lang_data.get('app', {}).get('seconds', 'seconds')}
+    🎉 {t('generation_success', 'Generation complete!')}
+    **⏱️ Time:** {task['gen_time']:.2f} {t('seconds', 'seconds')}
     **🎙️ Voice:** {task['voice_name']}
     **📁 Location:** `{task['output_dir']}`
     """)
@@ -376,8 +374,7 @@ if task and not st.session_state.generation_in_progress:
     col_audio, col_subtitle = st.columns([1, 1])
 
     with col_audio:
-        st.subheader("🔊 " + lang_data.get("app", {}
-                                          ).get("audio_output_subheader", "Audio Output"))
+        st.subheader("🔊 " + t("audio_output_subheader", "Audio Output"))
 
         # Audio player
         st.audio(task["audio_file_path"])
@@ -388,8 +385,7 @@ if task and not st.session_state.generation_in_progress:
         st.caption(f"📊 File: {audio_path.name} ({audio_size:.1f} KB)")
 
     with col_subtitle:
-        st.subheader("📜 " + lang_data.get("app", {}
-                                          ).get("srt_output_subheader", "SRT Subtitle"))
+        st.subheader("📜 " + t("srt_output_subheader", "SRT Subtitle"))
 
         # SRT preview
         st.text_area(
@@ -406,15 +402,14 @@ if task and not st.session_state.generation_in_progress:
         st.caption(f"📊 Total lines: {srt_lines}")
 
     # Download section
-    st.subheader("⬇️ " + lang_data.get("app", {}
-                                       ).get("download_files_subheader", "Download Files"))
+    st.subheader("⬇️ " + t("download_files_subheader", "Download Files"))
 
     col_dl1, col_dl2, col_dl3 = st.columns([1, 1, 1])
 
     with col_dl1:
         with open(task["audio_file_path"], "rb") as f:
             st.download_button(
-                label=f"📥 {lang_data.get('app', {}).get('download_audio_button', 'Download Audio')}",
+                label=f"📥 {t('download_audio_button', 'Download Audio')}",
                 data=f,
                 file_name=os.path.basename(task["audio_file_path"]),
                 mime="audio/wav" if task["audio_file_path"].endswith(
@@ -425,7 +420,7 @@ if task and not st.session_state.generation_in_progress:
 
     with col_dl2:
         st.download_button(
-            label=f"📝 {lang_data.get('app', {}).get('download_srt_button', 'Download Subtitle')}",
+            label=f"📝 {t('download_srt_button', 'Download Subtitle')}",
             data=task["srt_content"],
             file_name=os.path.basename(task["srt_file_path"]),
             mime="text/plain",
