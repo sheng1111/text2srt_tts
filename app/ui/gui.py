@@ -77,7 +77,7 @@ def get_language_display_name(lang_code):
 
 # Initialize session state
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'zh_TW'  # Default language
+    st.session_state.lang = 'en'  # Default language
 
 if 'task' not in st.session_state:
     st.session_state['task'] = None
@@ -109,7 +109,9 @@ def load_config():
             "Chinese Female": {"name": "zh-CN-XiaoxiaoNeural"},
             "Chinese Male": {"name": "zh-CN-YunxiNeural"},
             "English Female": {"name": "en-US-AriaNeural"},
-            "English Male": {"name": "en-US-GuyNeural"}
+            "English Male": {"name": "en-US-GuyNeural"},
+            "Japanese Female": {"name": "ja-JP-NanamiNeural"},
+            "Japanese Male": {"name": "ja-JP-KeitaNeural"}
         }
     }
 
@@ -228,13 +230,14 @@ preserve_punctuation = st.sidebar.checkbox(
 st.sidebar.markdown("---")
 
 # Version info in sidebar
-st.sidebar.markdown("**🔧 Version:** v1.1.2")
+st.sidebar.markdown("**🔧 Version:** v1.1.3")
 st.sidebar.markdown(
     "**📚 [Documentation](https://github.com/sheng1111/text2srt_tts)**")
 
 # MAIN CONTENT AREA
 st.title("🎤 " + t("title", "Text to Speech & Subtitle Generator"))
 st.markdown(t("description", "Convert text to high-quality speech and accurate subtitles."))
+st.info(t("free_service_note", "This is a free service."))
 
 # Input Section
 st.header("📝 " + t("input_section_header", "Enter Text"))
